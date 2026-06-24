@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WordFlow — Aprenda Inglês</title>
+  <meta name="description" content="Aprenda inglês com flashcards inteligentes. 20 palavras a cada 2 horas com quizzes e progresso." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0a0a12;
+      --surface:    #13131f;
+      --card:       #1a1a2e;
+      --border:     rgba(255,255,255,0.07);
+      --purple:     #7c3aed;
+      --purple-l:   #a78bfa;
+      --cyan:       #06b6d4;
+      --pink:       #ec4899;
+      --green:      #10b981;
+      --red:        #ef4444;
+      --yellow:     #f59e0b;
+      --text:       #f1f5f9;
+      --text-muted: #94a3b8;
+      --radius:     16px;
+      --shadow:     0 25px 50px rgba(0,0,0,0.5);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== BACKGROUND GLOW ===== */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: -10%;
+      width: 60vw;
+      height: 60vw;
+      background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -10%;
+      right: -10%;
+      width: 50vw;
+      height: 50vw;
+      background: radial-gradient(circle, rgba(6,182,212,0.10) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ===== LAYOUT ===== */
+    #app {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 20px;
+      min-height: 100vh;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--purple-l), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-top: -2px;
+    }
+
+    /* ===== STATS BAR ===== */
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .stat-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .stat-chip .icon { font-size: 15px; }
+    .stat-chip .val { font-weight: 700; color: var(--purple-l); }
+    .stat-chip .lbl { color: var(--text-muted); }
+
+    /* ===== TIMER CHIP ===== */
+    .timer-chip {
+      background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(6,182,212,0.2));
+      border: 1px solid rgba(124,58,237,0.4);
+      border-radius: 50px;
+      padding: 8px 16px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .timer-chip:hover { border-color: rgba(124,58,237,0.7); }
+    .timer-chip .timer-val { font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--cyan); }
+    .timer-chip .bell { animation: ring 2s ease infinite; }
+
+    @keyframes ring {
+      0%,90%,100% { transform: rotate(0deg); }
+      93% { transform: rotate(-15deg); }
+      96% { transform: rotate(15deg); }
+    }
+
+    /* ===== NOTIFICATION BANNER ===== */
+    .notif-banner {
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(6,182,212,0.15));
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: var(--radius);
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      animation: slideDown 0.4s ease;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .notif-banner.hidden { display: none; }
+
+    .notif-text { font-size: 13px; color: var(--text-muted); }
+    .notif-text strong { color: var(--text); }
+
+    .btn-allow {
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      border: none;
+      border-radius: 50px;
+      padding: 8px 18px;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.2s;
+    }
+    .btn-allow:hover { opacity: 0.85; }
+
+    /* ===== PROGRESS BAR ===== */
+    .session-progress {
+      margin-bottom: 28px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .progress-label { font-size: 13px; color: var(--text-muted); }
+    .progress-count { font-size: 13px; font-weight: 600; }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--surface);
+      border-radius: 50px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--purple), var(--cyan));
+      border-radius: 50px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ===== NAV TABS ===== */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 4px;
+      margin-bottom: 32px;
+      width: fit-content;
+    }
+
+    .tab {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 9px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, var(--purple), #5b21b6);
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(124,58,237,0.4);
+    }
+
+    /* ===== VIEWS ===== */
+    .view { display: none; }
+    .view.active { display: block; animation: fadeIn 0.4s ease; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== FLASHCARD ===== */
+    .flashcard-container {
+      perspective: 1200px;
+      margin-bottom: 24px;
+    }
+
+    .flashcard {
+      width: 100%;
+      height: 340px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .flashcard.flipped { transform: rotateY(180deg); }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 24px;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    /* FRONT: visible by default */
+    .card-front {
+      background: linear-gradient(135deg, var(--card), #1e1e35);
+      border: 1px solid rgba(124,58,237,0.3);
+      box-shadow: var(--shadow), 0 0 40px rgba(124,58,237,0.1);
+      z-index: 2;
+    }
+
+    /* BACK: rotated 180deg so backface faces user by default — hidden */
+    .card-back {
+      background: linear-gradient(135deg, #0f1f2e, #0a1628);
+      border: 1px solid rgba(6,182,212,0.3);
+      box-shadow: var(--shadow), 0 0 40px rgba(6,182,212,0.1);
+      transform: rotateY(180deg);
+      z-index: 1;
+    }
+
+    .card-category {
+      position: absolute;
+      top: 20px;
+      left: 24px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--purple-l);
+      opacity: 0.7;
+    }
+
+    .card-hint {
+      position: absolute;
+      bottom: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .card-word-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .card-word {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, var(--text), var(--purple-l));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    .btn-speak {
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(124,58,237,0.4);
+      background: rgba(124,58,237,0.12);
+      color: var(--purple-l);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      -webkit-text-fill-color: initial;
+    }
+
+    .btn-speak:hover {
+      background: rgba(124,58,237,0.25);
+      border-color: var(--purple-l);
+      transform: scale(1.12);
+    }
+
+    .btn-speak.speaking {
+      background: rgba(6,182,212,0.2);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      animation: pulse-speak 0.6s ease infinite alternate;
+    }
+
+    @keyframes pulse-speak {
+      from { transform: scale(1); box-shadow: 0 0 0 0 rgba(6,182,212,0.4); }
+      to   { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(6,182,212,0); }
+    }
+
+    .quiz-question-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .card-phonetic {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      color: var(--purple-l);
+      opacity: 0.8;
+      margin-bottom: 6px;
+    }
+
+    .card-type {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 6px;
+    }
+
+    .card-pron {
+      font-size: 15px;
+      color: var(--yellow);
+      opacity: 0.85;
+      font-style: italic;
+      letter-spacing: 0.3px;
+    }
+
+    .card-translation {
+      font-size: 38px;
+      font-weight: 800;
+      color: var(--cyan);
+      margin-bottom: 16px;
+      line-height: 1.1;
+    }
+
+    .card-example-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      max-width: 520px;
+    }
+
+    .card-example {
+      font-size: 16px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      font-style: italic;
+      max-width: 460px;
+    }
+
+    .btn-speak-sm {
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(6,182,212,0.35);
+      background: rgba(6,182,212,0.08);
+      color: var(--cyan);
+      font-size: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      -webkit-text-fill-color: initial;
+    }
+
+    .btn-speak-sm:hover {
+      background: rgba(6,182,212,0.2);
+      border-color: var(--cyan);
+      transform: scale(1.12);
+    }
+
+    .btn-speak-sm.speaking {
+      background: rgba(6,182,212,0.25);
+      border-color: var(--cyan);
+      animation: pulse-speak 0.6s ease infinite alternate;
+    }
+
+    .card-example strong {
+      color: var(--cyan);
+      font-style: normal;
+    }
+
+    .card-example-pt {
+      font-size: 13px;
+      color: rgba(148,163,184,0.6);
+      line-height: 1.5;
+      font-style: italic;
+      max-width: 480px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .card-example-pt strong {
+      color: rgba(6,182,212,0.7);
+      font-style: normal;
+    }
+
+    /* ===== CARD CONTROLS ===== */
+    .card-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .btn-nav {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .btn-nav:hover:not(:disabled) {
+      border-color: var(--purple);
+      color: var(--purple-l);
+      transform: scale(1.08);
+    }
+
+    .btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-flip {
+      flex: 1;
+      max-width: 220px;
+      height: 52px;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.3);
+    }
+
+    .btn-flip:hover { transform: scale(1.04); box-shadow: 0 6px 25px rgba(124,58,237,0.5); }
+
+    /* ===== WORD LIST (mini dots) ===== */
+    .word-dots {
+      display: flex;
+      gap: 6px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .word-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .word-dot.seen { background: var(--purple); border-color: var(--purple); }
+    .word-dot.current { background: var(--cyan); border-color: var(--cyan); transform: scale(1.4); }
+
+    /* ===== START SESSION / NEXT SESSION ===== */
+    .session-complete {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .complete-icon { font-size: 64px; margin-bottom: 20px; }
+
+    .complete-title {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--purple-l), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .complete-sub { color: var(--text-muted); font-size: 16px; margin-bottom: 32px; }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      border: none;
+      border-radius: 50px;
+      padding: 14px 32px;
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+    }
+
+    .btn-primary:hover { transform: scale(1.04); box-shadow: 0 6px 30px rgba(124,58,237,0.6); }
+
+    /* ===== QUIZ VIEW ===== */
+    .quiz-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .quiz-number {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .quiz-question {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--text), var(--purple-l));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .quiz-phonetic {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      color: var(--purple-l);
+      opacity: 0.7;
+      margin-bottom: 36px;
+    }
+
+    .quiz-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .quiz-option {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: center;
+    }
+
+    .quiz-option:hover:not(:disabled) {
+      border-color: var(--purple);
+      background: rgba(124,58,237,0.1);
+      transform: translateY(-2px);
+    }
+
+    .quiz-option.correct {
+      border-color: var(--green) !important;
+      background: rgba(16,185,129,0.15) !important;
+      color: var(--green) !important;
+    }
+
+    .quiz-option.wrong {
+      border-color: var(--red) !important;
+      background: rgba(239,68,68,0.15) !important;
+      color: var(--red) !important;
+    }
+
+    .quiz-option:disabled { cursor: default; }
+
+    .quiz-feedback {
+      margin-top: 20px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 500;
+      display: none;
+    }
+
+    .quiz-feedback.show { display: block; animation: fadeIn 0.3s ease; }
+    .quiz-feedback.ok { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+    .quiz-feedback.err { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+    .btn-next-quiz {
+      margin-top: 20px;
+      display: none;
+      width: 100%;
+      height: 52px;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(135deg, var(--purple), var(--cyan));
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(124,58,237,0.3);
+    }
+
+    .btn-next-quiz.show { display: block; animation: fadeIn 0.3s ease; }
+    .btn-next-quiz:hover { transform: scale(1.02); }
+
+    /* ===== PROGRESS VIEW ===== */
+    .progress-view-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .big-stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      transition: transform 0.2s ease;
+    }
+
+    .big-stat:hover { transform: translateY(-4px); }
+
+    .big-stat .num {
+      font-size: 42px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--purple-l), var(--cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .big-stat .lbl {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    /* Word history list */
+    .word-history {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+
+    .word-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+    }
+
+    .word-item:hover { border-color: var(--purple); }
+
+    .word-item .en { font-weight: 600; font-size: 14px; }
+    .word-item .pt { font-size: 12px; color: var(--text-muted); }
+    .word-item .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 50px;
+      font-weight: 600;
+    }
+
+    .badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
+    .badge-red   { background: rgba(239,68,68,0.15);  color: var(--red); }
+    .badge-gray  { background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); }
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid rgba(239,68,68,0.4);
+      border-radius: 50px;
+      padding: 10px 24px;
+      color: #f87171;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-reset:hover { background: rgba(239,68,68,0.1); border-color: var(--red); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .card-word { font-size: 36px; }
+      .card-translation { font-size: 28px; }
+      .quiz-question { font-size: 30px; }
+      .quiz-options { grid-template-columns: 1fr; }
+      .card-face { padding: 28px 24px; }
+      .tabs { width: 100%; justify-content: center; }
+      .tab { flex: 1; text-align: center; padding: 9px 12px; font-size: 13px; }
+    }
+
+    /* ===== STREAKS ===== */
+    .streak-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 32px;
+    }
+
+    .streak-day {
+      flex: 1;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+
+    .streak-day.done {
+      background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(6,182,212,0.3));
+      border-color: rgba(124,58,237,0.5);
+      color: var(--purple-l);
+      font-weight: 700;
+    }
+
+    .streak-day.today {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 10px rgba(6,182,212,0.2);
+    }
+
+    /* ===== SCROLL ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--surface); border-radius: 50px; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">WordFlow</div>
+        <div class="logo-sub">Inglês do jeito certo</div>
+      </div>
+    </div>
+    <div class="timer-chip" id="timerChip" onclick="requestNotifPermission()" title="Clique para ativar notificações">
+      <span class="bell">🔔</span>
+      <span>Próxima sessão:</span>
+      <span class="timer-val" id="timerDisplay">02:00:00</span>
+    </div>
+  </header>
+
+  <!-- NOTIFICATION BANNER -->
+  <div class="notif-banner" id="notifBanner">
+    <div class="notif-text">
+      <strong>Ative as notificações</strong> para ser avisado quando a próxima sessão começar! 🔔
+    </div>
+    <button class="btn-allow" onclick="requestNotifPermission()">Ativar</button>
+    <button onclick="document.getElementById('notifBanner').classList.add('hidden')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;">×</button>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-chip">
+      <span class="icon">📚</span>
+      <span class="val" id="statWords">0</span>
+      <span class="lbl">palavras aprendidas</span>
+    </div>
+    <div class="stat-chip">
+      <span class="icon">🎯</span>
+      <span class="val" id="statAccuracy">—</span>
+      <span class="lbl">precisão no quiz</span>
+    </div>
+    <div class="stat-chip">
+      <span class="icon">🔥</span>
+      <span class="val" id="statSessions">0</span>
+      <span class="lbl">sessões completas</span>
+    </div>
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="session-progress">
+    <div class="progress-header">
+      <span class="progress-label">Sessão atual</span>
+      <span class="progress-count" id="progressCount">0 / 20 palavras</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" id="tabFlash" onclick="switchTab('flash')">⚡ Flashcards</button>
+    <button class="tab" id="tabQuiz"  onclick="switchTab('quiz')">🎯 Quiz</button>
+    <button class="tab" id="tabProgress" onclick="switchTab('progress')">📊 Progresso</button>
+  </div>
+
+  <!-- ===== FLASHCARD VIEW ===== -->
+  <div class="view active" id="viewFlash">
+    <div id="flashcardArea">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- ===== QUIZ VIEW ===== -->
+  <div class="view" id="viewQuiz">
+    <div id="quizArea">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- ===== PROGRESS VIEW ===== -->
+  <div class="view" id="viewProgress">
+    <div class="progress-view-grid">
+      <div class="big-stat">
+        <div class="num" id="ps1">0</div>
+        <div class="lbl">Palavras vistas</div>
+      </div>
+      <div class="big-stat">
+        <div class="num" id="ps2">0</div>
+        <div class="lbl">Quiz corretos</div>
+      </div>
+      <div class="big-stat">
+        <div class="num" id="ps3">—</div>
+        <div class="lbl">Precisão</div>
+      </div>
+      <div class="big-stat">
+        <div class="num" id="ps4">0</div>
+        <div class="lbl">Dias de estudo</div>
+      </div>
+    </div>
+
+    <div class="section-title">🗓️ Últimos 7 dias</div>
+    <div class="streak-bar" id="streakBar">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="section-title">📖 Palavras estudadas</div>
+    <div class="word-history" id="wordHistory">
+      <!-- Populated by JS -->
+    </div>
+
+    <button class="btn-reset" onclick="resetProgress()">🗑️ Resetar progresso</button>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// VOCABULARY DATABASE (150+ words, multiple categories)
+// ============================================================
+const WORDS = [
+  // Daily Life
+  {en:"beautiful",pt:"bonito/a",ph:"/ˈbjuːtɪfəl/",pron:"biú-ti-ful",type:"adj",cat:"Daily Life",ex:"She has a <strong>beautiful</strong> smile.",expt:"Ela tem um sorriso <strong>bonito</strong>."},
+  {en:"happy",pt:"feliz",ph:"/ˈhæpi/",pron:"ré-pi",type:"adj",cat:"Daily Life",ex:"I am <strong>happy</strong> to meet you.",expt:"Estou <strong>feliz</strong> em te conhecer."},
+  {en:"busy",pt:"ocupado/a",ph:"/ˈbɪzi/",pron:"bí-zi",type:"adj",cat:"Daily Life",ex:"She is very <strong>busy</strong> today.",expt:"Ela está muito <strong>ocupada</strong> hoje."},
+  {en:"early",pt:"cedo",ph:"/ˈɜːrli/",pron:"êr-li",type:"adv",cat:"Daily Life",ex:"Wake up <strong>early</strong> to be productive.",expt:"Acorde <strong>cedo</strong> para ser produtivo."},
+  {en:"always",pt:"sempre",ph:"/ˈɔːlweɪz/",pron:"ól-ueiz",type:"adv",cat:"Daily Life",ex:"He <strong>always</strong> arrives on time.",expt:"Ele <strong>sempre</strong> chega no horário."},
+  {en:"never",pt:"nunca",ph:"/ˈnevər/",pron:"né-ver",type:"adv",cat:"Daily Life",ex:"I <strong>never</strong> give up.",expt:"Eu <strong>nunca</strong> desisto."},
+  {en:"together",pt:"juntos",ph:"/təˈɡeðər/",pron:"tu-gué-der",type:"adv",cat:"Daily Life",ex:"We work <strong>together</strong> as a team.",expt:"Trabalhamos <strong>juntos</strong> como uma equipe."},
+  {en:"enough",pt:"suficiente",ph:"/ɪˈnʌf/",pron:"i-nâf",type:"adj",cat:"Daily Life",ex:"This is <strong>enough</strong> food for everyone.",expt:"Essa quantidade de comida é <strong>suficiente</strong> para todos."},
+  {en:"important",pt:"importante",ph:"/ɪmˈpɔːrtənt/",pron:"im-pór-tent",type:"adj",cat:"Daily Life",ex:"Sleep is <strong>important</strong> for health.",expt:"Dormir é <strong>importante</strong> para a saúde."},
+  {en:"sometimes",pt:"às vezes",ph:"/ˈsʌmtaɪmz/",pron:"sâm-taimz",type:"adv",cat:"Daily Life",ex:"I <strong>sometimes</strong> eat pizza on Fridays.",expt:"<strong>Às vezes</strong> como pizza nas sextas-feiras."},
+
+  // Verbs
+  {en:"achieve",pt:"alcançar",ph:"/əˈtʃiːv/",pron:"a-tchív",type:"verb",cat:"Verbs",ex:"You can <strong>achieve</strong> anything you set your mind to.",expt:"Você pode <strong>alcançar</strong> qualquer coisa que se propuser."},
+  {en:"believe",pt:"acreditar",ph:"/bɪˈliːv/",pron:"bi-lív",type:"verb",cat:"Verbs",ex:"I <strong>believe</strong> in your potential.",expt:"Eu <strong>acredito</strong> no seu potencial."},
+  {en:"create",pt:"criar",ph:"/kriˈeɪt/",pron:"kri-éit",type:"verb",cat:"Verbs",ex:"She will <strong>create</strong> a new project.",expt:"Ela vai <strong>criar</strong> um novo projeto."},
+  {en:"decide",pt:"decidir",ph:"/dɪˈsaɪd/",pron:"di-sáid",type:"verb",cat:"Verbs",ex:"You must <strong>decide</strong> quickly.",expt:"Você precisa <strong>decidir</strong> rápido."},
+  {en:"explain",pt:"explicar",ph:"/ɪkˈspleɪn/",pron:"iks-pléin",type:"verb",cat:"Verbs",ex:"Can you <strong>explain</strong> this concept?",expt:"Você pode <strong>explicar</strong> esse conceito?"},
+  {en:"improve",pt:"melhorar",ph:"/ɪmˈpruːv/",pron:"im-prúv",type:"verb",cat:"Verbs",ex:"Practice will <strong>improve</strong> your skills.",expt:"A prática vai <strong>melhorar</strong> suas habilidades."},
+  {en:"manage",pt:"gerenciar",ph:"/ˈmænɪdʒ/",pron:"mé-nidj",type:"verb",cat:"Verbs",ex:"She can <strong>manage</strong> the team well.",expt:"Ela sabe <strong>gerenciar</strong> bem a equipe."},
+  {en:"practice",pt:"praticar",ph:"/ˈpræktɪs/",pron:"prék-tiss",type:"verb",cat:"Verbs",ex:"You need to <strong>practice</strong> every day.",expt:"Você precisa <strong>praticar</strong> todos os dias."},
+  {en:"remember",pt:"lembrar",ph:"/rɪˈmembər/",pron:"ri-mém-ber",type:"verb",cat:"Verbs",ex:"Do you <strong>remember</strong> her name?",expt:"Você <strong>lembra</strong> o nome dela?"},
+  {en:"understand",pt:"entender",ph:"/ˌʌndərˈstænd/",pron:"ân-der-stând",type:"verb",cat:"Verbs",ex:"I <strong>understand</strong> your point.",expt:"Eu <strong>entendo</strong> o seu ponto."},
+  {en:"support",pt:"apoiar",ph:"/səˈpɔːrt/",pron:"sa-pórt",type:"verb",cat:"Verbs",ex:"Friends <strong>support</strong> each other.",expt:"Amigos se <strong>apoiam</strong> mutuamente."},
+  {en:"share",pt:"compartilhar",ph:"/ʃer/",pron:"chér",type:"verb",cat:"Verbs",ex:"Please <strong>share</strong> your ideas.",expt:"Por favor, <strong>compartilhe</strong> suas ideias."},
+  {en:"suggest",pt:"sugerir",ph:"/səˈdʒest/",pron:"sa-djést",type:"verb",cat:"Verbs",ex:"I would like to <strong>suggest</strong> a plan.",expt:"Eu gostaria de <strong>sugerir</strong> um plano."},
+  {en:"follow",pt:"seguir",ph:"/ˈfɒloʊ/",pron:"fó-lou",type:"verb",cat:"Verbs",ex:"<strong>Follow</strong> your dreams.",expt:"<strong>Siga</strong> seus sonhos."},
+  {en:"avoid",pt:"evitar",ph:"/əˈvɔɪd/",pron:"a-vóid",type:"verb",cat:"Verbs",ex:"Try to <strong>avoid</strong> mistakes.",expt:"Tente <strong>evitar</strong> erros."},
+
+  // Nouns
+  {en:"knowledge",pt:"conhecimento",ph:"/ˈnɒlɪdʒ/",pron:"nó-lidj",type:"noun",cat:"Nouns",ex:"<strong>Knowledge</strong> is power.",expt:"<strong>Conhecimento</strong> é poder."},
+  {en:"challenge",pt:"desafio",ph:"/ˈtʃælɪndʒ/",pron:"tché-lindj",type:"noun",cat:"Nouns",ex:"Every <strong>challenge</strong> is an opportunity.",expt:"Todo <strong>desafio</strong> é uma oportunidade."},
+  {en:"opportunity",pt:"oportunidade",ph:"/ˌɒpərˈtjuːnɪti/",pron:"o-por-tiú-ni-ti",type:"noun",cat:"Nouns",ex:"Don't miss this <strong>opportunity</strong>.",expt:"Não perca essa <strong>oportunidade</strong>."},
+  {en:"experience",pt:"experiência",ph:"/ɪkˈspɪəriəns/",pron:"iks-píri-ens",type:"noun",cat:"Nouns",ex:"I have five years of <strong>experience</strong>.",expt:"Tenho cinco anos de <strong>experiência</strong>."},
+  {en:"success",pt:"sucesso",ph:"/səkˈses/",pron:"sak-sés",type:"noun",cat:"Nouns",ex:"Hard work leads to <strong>success</strong>.",expt:"O trabalho duro leva ao <strong>sucesso</strong>."},
+  {en:"freedom",pt:"liberdade",ph:"/ˈfriːdəm/",pron:"frí-dem",type:"noun",cat:"Nouns",ex:"We value our <strong>freedom</strong>.",expt:"Nós valorizamos nossa <strong>liberdade</strong>."},
+  {en:"courage",pt:"coragem",ph:"/ˈkɜːrɪdʒ/",pron:"kê-ridj",type:"noun",cat:"Nouns",ex:"It takes <strong>courage</strong> to try.",expt:"É preciso <strong>coragem</strong> para tentar."},
+  {en:"decision",pt:"decisão",ph:"/dɪˈsɪʒən/",pron:"di-sí-jen",type:"noun",cat:"Nouns",ex:"Make the right <strong>decision</strong>.",expt:"Tome a <strong>decisão</strong> certa."},
+  {en:"relationship",pt:"relacionamento",ph:"/rɪˈleɪʃənʃɪp/",pron:"ri-léi-chen-chip",type:"noun",cat:"Nouns",ex:"Build strong <strong>relationships</strong>.",expt:"Construa <strong>relacionamentos</strong> sólidos."},
+  {en:"environment",pt:"meio ambiente",ph:"/ɪnˈvaɪrənmənt/",pron:"in-vái-ren-ment",type:"noun",cat:"Nouns",ex:"Protect our <strong>environment</strong>.",expt:"Proteja o nosso <strong>meio ambiente</strong>."},
+  {en:"imagination",pt:"imaginação",ph:"/ɪˌmædʒɪˈneɪʃən/",pron:"i-mé-dji-néi-chen",type:"noun",cat:"Nouns",ex:"Use your <strong>imagination</strong>.",expt:"Use sua <strong>imaginação</strong>."},
+  {en:"purpose",pt:"propósito",ph:"/ˈpɜːrpəs/",pron:"pêr-pes",type:"noun",cat:"Nouns",ex:"Find your <strong>purpose</strong> in life.",expt:"Encontre seu <strong>propósito</strong> na vida."},
+  {en:"habit",pt:"hábito",ph:"/ˈhæbɪt/",pron:"ré-bit",type:"noun",cat:"Nouns",ex:"Build healthy <strong>habits</strong>.",expt:"Crie <strong>hábitos</strong> saudáveis."},
+  {en:"value",pt:"valor",ph:"/ˈvæljuː/",pron:"vé-liu",type:"noun",cat:"Nouns",ex:"Hard work has great <strong>value</strong>.",expt:"O trabalho duro tem grande <strong>valor</strong>."},
+  {en:"strength",pt:"força",ph:"/streŋθ/",pron:"strêngt",type:"noun",cat:"Nouns",ex:"Find your inner <strong>strength</strong>.",expt:"Encontre sua <strong>força</strong> interior."},
+
+  // Travel
+  {en:"adventure",pt:"aventura",ph:"/ədˈventʃər/",pron:"ad-vên-tcher",type:"noun",cat:"Travel",ex:"Life is an <strong>adventure</strong>.",expt:"A vida é uma <strong>aventura</strong>."},
+  {en:"journey",pt:"jornada",ph:"/ˈdʒɜːrni/",pron:"djêr-ni",type:"noun",cat:"Travel",ex:"The <strong>journey</strong> of a thousand miles begins with one step.",expt:"A <strong>jornada</strong> de mil milhas começa com um único passo."},
+  {en:"departure",pt:"partida",ph:"/dɪˈpɑːrtʃər/",pron:"di-pár-tcher",type:"noun",cat:"Travel",ex:"Our <strong>departure</strong> is at 8 AM.",expt:"Nossa <strong>partida</strong> é às 8h da manhã."},
+  {en:"arrival",pt:"chegada",ph:"/əˈraɪvəl/",pron:"a-rái-vel",type:"noun",cat:"Travel",ex:"We celebrated his <strong>arrival</strong>.",expt:"Celebramos a <strong>chegada</strong> dele."},
+  {en:"destination",pt:"destino",ph:"/ˌdestɪˈneɪʃən/",pron:"des-ti-néi-chen",type:"noun",cat:"Travel",ex:"Our <strong>destination</strong> is Paris.",expt:"Nosso <strong>destino</strong> é Paris."},
+  {en:"luggage",pt:"bagagem",ph:"/ˈlʌɡɪdʒ/",pron:"lâ-guidj",type:"noun",cat:"Travel",ex:"Don't forget your <strong>luggage</strong>.",expt:"Não esqueça sua <strong>bagagem</strong>."},
+  {en:"reservation",pt:"reserva",ph:"/ˌrezərˈveɪʃən/",pron:"re-zer-véi-chen",type:"noun",cat:"Travel",ex:"I made a <strong>reservation</strong> at the hotel.",expt:"Fiz uma <strong>reserva</strong> no hotel."},
+  {en:"passport",pt:"passaporte",ph:"/ˈpæspɔːrt/",pron:"pés-port",type:"noun",cat:"Travel",ex:"Always carry your <strong>passport</strong>.",expt:"Sempre leve seu <strong>passaporte</strong>."},
+
+  // Technology
+  {en:"software",pt:"software",ph:"/ˈsɒftweər/",pron:"sóft-uer",type:"noun",cat:"Technology",ex:"This <strong>software</strong> is very useful.",expt:"Este <strong>software</strong> é muito útil."},
+  {en:"database",pt:"banco de dados",ph:"/ˈdeɪtəbeɪs/",pron:"déi-ta-beis",type:"noun",cat:"Technology",ex:"The <strong>database</strong> stores all user information.",expt:"O <strong>banco de dados</strong> armazena todas as informações do usuário."},
+  {en:"network",pt:"rede",ph:"/ˈnetwɜːrk/",pron:"nét-uork",type:"noun",cat:"Technology",ex:"The <strong>network</strong> is down.",expt:"A <strong>rede</strong> está fora do ar."},
+  {en:"update",pt:"atualizar",ph:"/ˈʌpdeɪt/",pron:"âp-deit",type:"verb",cat:"Technology",ex:"Please <strong>update</strong> your password.",expt:"Por favor, <strong>atualize</strong> sua senha."},
+  {en:"download",pt:"baixar",ph:"/ˈdaʊnloʊd/",pron:"dáun-loud",type:"verb",cat:"Technology",ex:"<strong>Download</strong> the app for free.",expt:"<strong>Baixe</strong> o aplicativo gratuitamente."},
+  {en:"feature",pt:"funcionalidade",ph:"/ˈfiːtʃər/",pron:"fí-tcher",type:"noun",cat:"Technology",ex:"This new <strong>feature</strong> is amazing.",expt:"Essa nova <strong>funcionalidade</strong> é incrível."},
+
+  // Emotions
+  {en:"grateful",pt:"grato/a",ph:"/ˈɡreɪtfəl/",pron:"gréit-ful",type:"adj",cat:"Emotions",ex:"I am <strong>grateful</strong> for your help.",expt:"Sou <strong>grato</strong> pela sua ajuda."},
+  {en:"anxious",pt:"ansioso/a",ph:"/ˈæŋkʃəs/",pron:"ênk-ches",type:"adj",cat:"Emotions",ex:"She felt <strong>anxious</strong> before the exam.",expt:"Ela se sentiu <strong>ansiosa</strong> antes da prova."},
+  {en:"confident",pt:"confiante",ph:"/ˈkɒnfɪdənt/",pron:"kón-fi-dent",type:"adj",cat:"Emotions",ex:"Be <strong>confident</strong> in yourself.",expt:"Seja <strong>confiante</strong> em si mesmo."},
+  {en:"proud",pt:"orgulhoso/a",ph:"/praʊd/",pron:"práud",type:"adj",cat:"Emotions",ex:"I am <strong>proud</strong> of your achievements.",expt:"Estou <strong>orgulhoso</strong> das suas conquistas."},
+  {en:"disappointed",pt:"decepcionado/a",ph:"/ˌdɪsəˈpɔɪntɪd/",pron:"dis-a-póin-tid",type:"adj",cat:"Emotions",ex:"She was <strong>disappointed</strong> with the result.",expt:"Ela ficou <strong>decepcionada</strong> com o resultado."},
+  {en:"frustrated",pt:"frustrado/a",ph:"/ˈfrʌstreɪtɪd/",pron:"frâs-trei-tid",type:"adj",cat:"Emotions",ex:"Don't get <strong>frustrated</strong> — keep trying.",expt:"Não fique <strong>frustrado</strong> — continue tentando."},
+  {en:"excited",pt:"animado/a",ph:"/ɪkˈsaɪtɪd/",pron:"ik-sái-tid",type:"adj",cat:"Emotions",ex:"He is <strong>excited</strong> about the trip.",expt:"Ele está <strong>animado</strong> com a viagem."},
+  {en:"overwhelmed",pt:"sobrecarregado/a",ph:"/ˌoʊvərˈwelmd/",pron:"ô-ver-uélmd",type:"adj",cat:"Emotions",ex:"She felt <strong>overwhelmed</strong> by the workload.",expt:"Ela se sentiu <strong>sobrecarregada</strong> com o volume de trabalho."},
+
+  // Work
+  {en:"deadline",pt:"prazo",ph:"/ˈdedlaɪn/",pron:"déd-lain",type:"noun",cat:"Work",ex:"The <strong>deadline</strong> is tomorrow.",expt:"O <strong>prazo</strong> é amanhã."},
+  {en:"meeting",pt:"reunião",ph:"/ˈmiːtɪŋ/",pron:"mí-ting",type:"noun",cat:"Work",ex:"We have a <strong>meeting</strong> at 3 PM.",expt:"Temos uma <strong>reunião</strong> às 15h."},
+  {en:"feedback",pt:"retorno/avaliação",ph:"/ˈfiːdbæk/",pron:"fíd-bek",type:"noun",cat:"Work",ex:"I need your <strong>feedback</strong> on this.",expt:"Preciso do seu <strong>retorno</strong> sobre isso."},
+  {en:"strategy",pt:"estratégia",ph:"/ˈstrætədʒi/",pron:"stré-te-dji",type:"noun",cat:"Work",ex:"We need a new <strong>strategy</strong>.",expt:"Precisamos de uma nova <strong>estratégia</strong>."},
+  {en:"leadership",pt:"liderança",ph:"/ˈliːdərʃɪp/",pron:"lí-der-chip",type:"noun",cat:"Work",ex:"Good <strong>leadership</strong> inspires teams.",expt:"Uma boa <strong>liderança</strong> inspira equipes."},
+  {en:"productive",pt:"produtivo/a",ph:"/prəˈdʌktɪv/",pron:"pro-dâk-tiv",type:"adj",cat:"Work",ex:"Have a <strong>productive</strong> day!",expt:"Tenha um dia <strong>produtivo</strong>!"},
+  {en:"collaborate",pt:"colaborar",ph:"/kəˈlæbəreɪt/",pron:"ko-lé-bo-reit",type:"verb",cat:"Work",ex:"We need to <strong>collaborate</strong> on this.",expt:"Precisamos <strong>colaborar</strong> nisto."},
+  {en:"negotiate",pt:"negociar",ph:"/nɪˈɡoʊʃieɪt/",pron:"ni-gô-chi-eit",type:"verb",cat:"Work",ex:"Let's <strong>negotiate</strong> the terms.",expt:"Vamos <strong>negociar</strong> os termos."},
+
+  // Adjectives
+  {en:"outstanding",pt:"excepcional",ph:"/ˌaʊtˈstændɪŋ/",pron:"aut-stên-ding",type:"adj",cat:"Adjectives",ex:"Your work is <strong>outstanding</strong>.",expt:"Seu trabalho é <strong>excepcional</strong>."},
+  {en:"tremendous",pt:"tremendo/a",ph:"/trɪˈmendəs/",pron:"tri-mên-des",type:"adj",cat:"Adjectives",ex:"He made <strong>tremendous</strong> progress.",expt:"Ele fez um progresso <strong>tremendo</strong>."},
+  {en:"remarkable",pt:"notável",ph:"/rɪˈmɑːrkəbəl/",pron:"ri-már-ka-bel",type:"adj",cat:"Adjectives",ex:"She has a <strong>remarkable</strong> talent.",expt:"Ela tem um talento <strong>notável</strong>."},
+  {en:"efficient",pt:"eficiente",ph:"/ɪˈfɪʃənt/",pron:"i-fí-chent",type:"adj",cat:"Adjectives",ex:"Find a more <strong>efficient</strong> solution.",expt:"Encontre uma solução mais <strong>eficiente</strong>."},
+  {en:"flexible",pt:"flexível",ph:"/ˈfleksɪbəl/",pron:"flék-si-bel",type:"adj",cat:"Adjectives",ex:"Stay <strong>flexible</strong> in your approach.",expt:"Seja <strong>flexível</strong> na sua abordagem."},
+  {en:"reliable",pt:"confiável",ph:"/rɪˈlaɪəbəl/",pron:"ri-lái-a-bel",type:"adj",cat:"Adjectives",ex:"She is a very <strong>reliable</strong> person.",expt:"Ela é uma pessoa muito <strong>confiável</strong>."},
+  {en:"significant",pt:"significativo/a",ph:"/sɪɡˈnɪfɪkənt/",pron:"sig-ní-fi-kant",type:"adj",cat:"Adjectives",ex:"This is a <strong>significant</strong> change.",expt:"Esta é uma mudança <strong>significativa</strong>."},
+  {en:"consistent",pt:"consistente",ph:"/kənˈsɪstənt/",pron:"kon-sís-tent",type:"adj",cat:"Adjectives",ex:"Be <strong>consistent</strong> in your efforts.",expt:"Seja <strong>consistente</strong> nos seus esforços."},
+
+  // Phrasal / Expressions
+  {en:"give up",pt:"desistir",ph:"/ɡɪv ʌp/",pron:"guiv âp",type:"phrasal",cat:"Expressions",ex:"Never <strong>give up</strong> on your goals.",expt:"Nunca <strong>desista</strong> dos seus objetivos."},
+  {en:"look forward to",pt:"ansiar por",ph:"/lʊk ˈfɔːrwərd tuː/",pron:"luk fór-uord tu",type:"phrasal",cat:"Expressions",ex:"I <strong>look forward to</strong> hearing from you.",expt:"<strong>Anseio por</strong> ter notícias suas."},
+  {en:"keep in mind",pt:"ter em mente",ph:"/kiːp ɪn maɪnd/",pron:"kip in maind",type:"phrasal",cat:"Expressions",ex:"<strong>Keep in mind</strong> that time is limited.",expt:"<strong>Tenha em mente</strong> que o tempo é limitado."},
+  {en:"take advantage",pt:"aproveitar",ph:"/teɪk ədˈvɑːntɪdʒ/",pron:"teik ad-vân-tidj",type:"phrasal",cat:"Expressions",ex:"<strong>Take advantage</strong> of every opportunity.",expt:"<strong>Aproveite</strong> cada oportunidade."},
+  {en:"make sense",pt:"fazer sentido",ph:"/meɪk sens/",pron:"meik sens",type:"phrasal",cat:"Expressions",ex:"Does that <strong>make sense</strong> to you?",expt:"Isso <strong>faz sentido</strong> para você?"},
+  {en:"on the other hand",pt:"por outro lado",ph:"/ɒn ðə ˈʌðər hænd/",pron:"on di â-der rand",type:"phrasal",cat:"Expressions",ex:"<strong>On the other hand</strong>, there are benefits.",expt:"<strong>Por outro lado</strong>, há benefícios."},
+
+  // Numbers / Time
+  {en:"immediately",pt:"imediatamente",ph:"/ɪˈmiːdiətli/",pron:"i-mí-dia-tli",type:"adv",cat:"Time",ex:"Please respond <strong>immediately</strong>.",expt:"Por favor, responda <strong>imediatamente</strong>."},
+  {en:"recently",pt:"recentemente",ph:"/ˈriːsntli/",pron:"rí-sent-li",type:"adv",cat:"Time",ex:"I <strong>recently</strong> moved to a new city.",expt:"<strong>Recentemente</strong> me mudei para uma nova cidade."},
+  {en:"eventually",pt:"eventualmente",ph:"/ɪˈventʃuəli/",pron:"i-vên-tchuo-li",type:"adv",cat:"Time",ex:"He will <strong>eventually</strong> succeed.",expt:"Ele vai <strong>eventualmente</strong> ter sucesso."},
+  {en:"meanwhile",pt:"enquanto isso",ph:"/ˈmiːnwaɪl/",pron:"mín-uail",type:"adv",cat:"Time",ex:"<strong>Meanwhile</strong>, dinner is ready.",expt:"<strong>Enquanto isso</strong>, o jantar está pronto."},
+  {en:"frequently",pt:"frequentemente",ph:"/ˈfriːkwəntli/",pron:"frí-kuent-li",type:"adv",cat:"Time",ex:"She <strong>frequently</strong> goes to the gym.",expt:"Ela vai à academia <strong>frequentemente</strong>."},
+
+// ============================================================
+// STATE
+// ============================================================
+
+  {en:"busy",pt:"ocupado/a",ph:"/ˈbɪzi/",type:"adj",cat:"Daily Life",ex:"She is very <strong>busy</strong> today.",expt:"Ela está muito <strong>ocupada</strong> hoje."},
+  {en:"early",pt:"cedo",ph:"/ˈɜːrli/",type:"adv",cat:"Daily Life",ex:"Wake up <strong>early</strong> to be productive.",expt:"Acorde <strong>cedo</strong> para ser produtivo."},
+  {en:"always",pt:"sempre",ph:"/ˈɔːlweɪz/",type:"adv",cat:"Daily Life",ex:"He <strong>always</strong> arrives on time.",expt:"Ele <strong>sempre</strong> chega no horário."},
+  {en:"never",pt:"nunca",ph:"/ˈnevər/",type:"adv",cat:"Daily Life",ex:"I <strong>never</strong> give up.",expt:"Eu <strong>nunca</strong> desisto."},
+  {en:"together",pt:"juntos",ph:"/təˈɡeðər/",type:"adv",cat:"Daily Life",ex:"We work <strong>together</strong> as a team.",expt:"Trabalhamos <strong>juntos</strong> como uma equipe."},
+  {en:"enough",pt:"suficiente",ph:"/ɪˈnʌf/",type:"adj",cat:"Daily Life",ex:"This is <strong>enough</strong> food for everyone.",expt:"Essa quantidade de comida é <strong>suficiente</strong> para todos."},
+  {en:"important",pt:"importante",ph:"/ɪmˈpɔːrtənt/",type:"adj",cat:"Daily Life",ex:"Sleep is <strong>important</strong> for health.",expt:"Dormir é <strong>importante</strong> para a saúde."},
+  {en:"sometimes",pt:"às vezes",ph:"/ˈsʌmtaɪmz/",type:"adv",cat:"Daily Life",ex:"I <strong>sometimes</strong> eat pizza on Fridays.",expt:"<strong>Às vezes</strong> como pizza nas sextas-feiras."},
+
+  // Verbs
+  {en:"achieve",pt:"alcançar",ph:"/əˈtʃiːv/",type:"verb",cat:"Verbs",ex:"You can <strong>achieve</strong> anything you set your mind to.",expt:"Você pode <strong>alcançar</strong> qualquer coisa que se propuser."},
+  {en:"believe",pt:"acreditar",ph:"/bɪˈliːv/",type:"verb",cat:"Verbs",ex:"I <strong>believe</strong> in your potential.",expt:"Eu <strong>acredito</strong> no seu potencial."},
+  {en:"create",pt:"criar",ph:"/kriˈeɪt/",type:"verb",cat:"Verbs",ex:"She will <strong>create</strong> a new project.",expt:"Ela vai <strong>criar</strong> um novo projeto."},
+  {en:"decide",pt:"decidir",ph:"/dɪˈsaɪd/",type:"verb",cat:"Verbs",ex:"You must <strong>decide</strong> quickly.",expt:"Você precisa <strong>decidir</strong> rápido."},
+  {en:"explain",pt:"explicar",ph:"/ɪkˈspleɪn/",type:"verb",cat:"Verbs",ex:"Can you <strong>explain</strong> this concept?",expt:"Você pode <strong>explicar</strong> esse conceito?"},
+  {en:"improve",pt:"melhorar",ph:"/ɪmˈpruːv/",type:"verb",cat:"Verbs",ex:"Practice will <strong>improve</strong> your skills.",expt:"A prática vai <strong>melhorar</strong> suas habilidades."},
+  {en:"manage",pt:"gerenciar",ph:"/ˈmænɪdʒ/",type:"verb",cat:"Verbs",ex:"She can <strong>manage</strong> the team well.",expt:"Ela sabe <strong>gerenciar</strong> bem a equipe."},
+  {en:"practice",pt:"praticar",ph:"/ˈpræktɪs/",type:"verb",cat:"Verbs",ex:"You need to <strong>practice</strong> every day.",expt:"Você precisa <strong>praticar</strong> todos os dias."},
+  {en:"remember",pt:"lembrar",ph:"/rɪˈmembər/",type:"verb",cat:"Verbs",ex:"Do you <strong>remember</strong> her name?",expt:"Você <strong>lembra</strong> o nome dela?"},
+  {en:"understand",pt:"entender",ph:"/ˌʌndərˈstænd/",type:"verb",cat:"Verbs",ex:"I <strong>understand</strong> your point.",expt:"Eu <strong>entendo</strong> o seu ponto."},
+  {en:"support",pt:"apoiar",ph:"/səˈpɔːrt/",type:"verb",cat:"Verbs",ex:"Friends <strong>support</strong> each other.",expt:"Amigos se <strong>apoiam</strong> mutuamente."},
+  {en:"share",pt:"compartilhar",ph:"/ʃer/",type:"verb",cat:"Verbs",ex:"Please <strong>share</strong> your ideas.",expt:"Por favor, <strong>compartilhe</strong> suas ideias."},
+  {en:"suggest",pt:"sugerir",ph:"/səˈdʒest/",type:"verb",cat:"Verbs",ex:"I would like to <strong>suggest</strong> a plan.",expt:"Eu gostaria de <strong>sugerir</strong> um plano."},
+  {en:"follow",pt:"seguir",ph:"/ˈfɒloʊ/",type:"verb",cat:"Verbs",ex:"<strong>Follow</strong> your dreams.",expt:"<strong>Siga</strong> seus sonhos."},
+  {en:"avoid",pt:"evitar",ph:"/əˈvɔɪd/",type:"verb",cat:"Verbs",ex:"Try to <strong>avoid</strong> mistakes.",expt:"Tente <strong>evitar</strong> erros."},
+
+  // Nouns
+  {en:"knowledge",pt:"conhecimento",ph:"/ˈnɒlɪdʒ/",type:"noun",cat:"Nouns",ex:"<strong>Knowledge</strong> is power.",expt:"<strong>Conhecimento</strong> é poder."},
+  {en:"challenge",pt:"desafio",ph:"/ˈtʃælɪndʒ/",type:"noun",cat:"Nouns",ex:"Every <strong>challenge</strong> is an opportunity.",expt:"Todo <strong>desafio</strong> é uma oportunidade."},
+  {en:"opportunity",pt:"oportunidade",ph:"/ˌɒpərˈtjuːnɪti/",type:"noun",cat:"Nouns",ex:"Don't miss this <strong>opportunity</strong>.",expt:"Não perca essa <strong>oportunidade</strong>."},
+  {en:"experience",pt:"experiência",ph:"/ɪkˈspɪəriəns/",type:"noun",cat:"Nouns",ex:"I have five years of <strong>experience</strong>.",expt:"Tenho cinco anos de <strong>experiência</strong>."},
+  {en:"success",pt:"sucesso",ph:"/səkˈses/",type:"noun",cat:"Nouns",ex:"Hard work leads to <strong>success</strong>.",expt:"O trabalho duro leva ao <strong>sucesso</strong>."},
+  {en:"freedom",pt:"liberdade",ph:"/ˈfriːdəm/",type:"noun",cat:"Nouns",ex:"We value our <strong>freedom</strong>.",expt:"Nós valorizamos nossa <strong>liberdade</strong>."},
+  {en:"courage",pt:"coragem",ph:"/ˈkɜːrɪdʒ/",type:"noun",cat:"Nouns",ex:"It takes <strong>courage</strong> to try.",expt:"É preciso <strong>coragem</strong> para tentar."},
+  {en:"decision",pt:"decisão",ph:"/dɪˈsɪʒən/",type:"noun",cat:"Nouns",ex:"Make the right <strong>decision</strong>.",expt:"Tome a <strong>decisão</strong> certa."},
+  {en:"relationship",pt:"relacionamento",ph:"/rɪˈleɪʃənʃɪp/",type:"noun",cat:"Nouns",ex:"Build strong <strong>relationships</strong>.",expt:"Construa <strong>relacionamentos</strong> sólidos."},
+  {en:"environment",pt:"meio ambiente",ph:"/ɪnˈvaɪrənmənt/",type:"noun",cat:"Nouns",ex:"Protect our <strong>environment</strong>.",expt:"Proteja o nosso <strong>meio ambiente</strong>."},
+  {en:"imagination",pt:"imaginação",ph:"/ɪˌmædʒɪˈneɪʃən/",type:"noun",cat:"Nouns",ex:"Use your <strong>imagination</strong>.",expt:"Use sua <strong>imaginação</strong>."},
+  {en:"purpose",pt:"propósito",ph:"/ˈpɜːrpəs/",type:"noun",cat:"Nouns",ex:"Find your <strong>purpose</strong> in life.",expt:"Encontre seu <strong>propósito</strong> na vida."},
+  {en:"habit",pt:"hábito",ph:"/ˈhæbɪt/",type:"noun",cat:"Nouns",ex:"Build healthy <strong>habits</strong>.",expt:"Crie <strong>hábitos</strong> saudáveis."},
+  {en:"value",pt:"valor",ph:"/ˈvæljuː/",type:"noun",cat:"Nouns",ex:"Hard work has great <strong>value</strong>.",expt:"O trabalho duro tem grande <strong>valor</strong>."},
+  {en:"strength",pt:"força",ph:"/streŋθ/",type:"noun",cat:"Nouns",ex:"Find your inner <strong>strength</strong>.",expt:"Encontre sua <strong>força</strong> interior."},
+
+  // Travel
+  {en:"adventure",pt:"aventura",ph:"/ədˈventʃər/",type:"noun",cat:"Travel",ex:"Life is an <strong>adventure</strong>.",expt:"A vida é uma <strong>aventura</strong>."},
+  {en:"journey",pt:"jornada",ph:"/ˈdʒɜːrni/",type:"noun",cat:"Travel",ex:"The <strong>journey</strong> of a thousand miles begins with one step.",expt:"A <strong>jornada</strong> de mil milhas começa com um único passo."},
+  {en:"departure",pt:"partida",ph:"/dɪˈpɑːrtʃər/",type:"noun",cat:"Travel",ex:"Our <strong>departure</strong> is at 8 AM.",expt:"Nossa <strong>partida</strong> é às 8h da manhã."},
+  {en:"arrival",pt:"chegada",ph:"/əˈraɪvəl/",type:"noun",cat:"Travel",ex:"We celebrated his <strong>arrival</strong>.",expt:"Celebramos a <strong>chegada</strong> dele."},
+  {en:"destination",pt:"destino",ph:"/ˌdestɪˈneɪʃən/",type:"noun",cat:"Travel",ex:"Our <strong>destination</strong> is Paris.",expt:"Nosso <strong>destino</strong> é Paris."},
+  {en:"luggage",pt:"bagagem",ph:"/ˈlʌɡɪdʒ/",type:"noun",cat:"Travel",ex:"Don't forget your <strong>luggage</strong>.",expt:"Não esqueça sua <strong>bagagem</strong>."},
+  {en:"reservation",pt:"reserva",ph:"/ˌrezərˈveɪʃən/",type:"noun",cat:"Travel",ex:"I made a <strong>reservation</strong> at the hotel.",expt:"Fiz uma <strong>reserva</strong> no hotel."},
+  {en:"passport",pt:"passaporte",ph:"/ˈpæspɔːrt/",type:"noun",cat:"Travel",ex:"Always carry your <strong>passport</strong>.",expt:"Sempre leve seu <strong>passaporte</strong>."},
+
+  // Technology
+  {en:"software",pt:"software",ph:"/ˈsɒftweər/",type:"noun",cat:"Technology",ex:"This <strong>software</strong> is very useful.",expt:"Este <strong>software</strong> é muito útil."},
+  {en:"database",pt:"banco de dados",ph:"/ˈdeɪtəbeɪs/",type:"noun",cat:"Technology",ex:"The <strong>database</strong> stores all user information.",expt:"O <strong>banco de dados</strong> armazena todas as informações do usuário."},
+  {en:"network",pt:"rede",ph:"/ˈnetwɜːrk/",type:"noun",cat:"Technology",ex:"The <strong>network</strong> is down.",expt:"A <strong>rede</strong> está fora do ar."},
+  {en:"update",pt:"atualizar",ph:"/ˈʌpdeɪt/",type:"verb",cat:"Technology",ex:"Please <strong>update</strong> your password.",expt:"Por favor, <strong>atualize</strong> sua senha."},
+  {en:"download",pt:"baixar",ph:"/ˈdaʊnloʊd/",type:"verb",cat:"Technology",ex:"<strong>Download</strong> the app for free.",expt:"<strong>Baixe</strong> o aplicativo gratuitamente."},
+  {en:"feature",pt:"funcionalidade",ph:"/ˈfiːtʃər/",type:"noun",cat:"Technology",ex:"This new <strong>feature</strong> is amazing.",expt:"Essa nova <strong>funcionalidade</strong> é incrível."},
+
+  // Emotions
+  {en:"grateful",pt:"grato/a",ph:"/ˈɡreɪtfəl/",type:"adj",cat:"Emotions",ex:"I am <strong>grateful</strong> for your help.",expt:"Sou <strong>grato</strong> pela sua ajuda."},
+  {en:"anxious",pt:"ansioso/a",ph:"/ˈæŋkʃəs/",type:"adj",cat:"Emotions",ex:"She felt <strong>anxious</strong> before the exam.",expt:"Ela se sentiu <strong>ansiosa</strong> antes da prova."},
+  {en:"confident",pt:"confiante",ph:"/ˈkɒnfɪdənt/",type:"adj",cat:"Emotions",ex:"Be <strong>confident</strong> in yourself.",expt:"Seja <strong>confiante</strong> em si mesmo."},
+  {en:"proud",pt:"orgulhoso/a",ph:"/praʊd/",type:"adj",cat:"Emotions",ex:"I am <strong>proud</strong> of your achievements.",expt:"Estou <strong>orgulhoso</strong> das suas conquistas."},
+  {en:"disappointed",pt:"decepcionado/a",ph:"/ˌdɪsəˈpɔɪntɪd/",type:"adj",cat:"Emotions",ex:"She was <strong>disappointed</strong> with the result.",expt:"Ela ficou <strong>decepcionada</strong> com o resultado."},
+  {en:"frustrated",pt:"frustrado/a",ph:"/ˈfrʌstreɪtɪd/",type:"adj",cat:"Emotions",ex:"Don't get <strong>frustrated</strong> — keep trying.",expt:"Não fique <strong>frustrado</strong> — continue tentando."},
+  {en:"excited",pt:"animado/a",ph:"/ɪkˈsaɪtɪd/",type:"adj",cat:"Emotions",ex:"He is <strong>excited</strong> about the trip.",expt:"Ele está <strong>animado</strong> com a viagem."},
+  {en:"overwhelmed",pt:"sobrecarregado/a",ph:"/ˌoʊvərˈwelmd/",type:"adj",cat:"Emotions",ex:"She felt <strong>overwhelmed</strong> by the workload.",expt:"Ela se sentiu <strong>sobrecarregada</strong> com o volume de trabalho."},
+
+  // Work
+  {en:"deadline",pt:"prazo",ph:"/ˈdedlaɪn/",type:"noun",cat:"Work",ex:"The <strong>deadline</strong> is tomorrow.",expt:"O <strong>prazo</strong> é amanhã."},
+  {en:"meeting",pt:"reunião",ph:"/ˈmiːtɪŋ/",type:"noun",cat:"Work",ex:"We have a <strong>meeting</strong> at 3 PM.",expt:"Temos uma <strong>reunião</strong> às 15h."},
+  {en:"feedback",pt:"retorno/avaliação",ph:"/ˈfiːdbæk/",type:"noun",cat:"Work",ex:"I need your <strong>feedback</strong> on this.",expt:"Preciso do seu <strong>retorno</strong> sobre isso."},
+  {en:"strategy",pt:"estratégia",ph:"/ˈstrætədʒi/",type:"noun",cat:"Work",ex:"We need a new <strong>strategy</strong>.",expt:"Precisamos de uma nova <strong>estratégia</strong>."},
+  {en:"leadership",pt:"liderança",ph:"/ˈliːdərʃɪp/",type:"noun",cat:"Work",ex:"Good <strong>leadership</strong> inspires teams.",expt:"Uma boa <strong>liderança</strong> inspira equipes."},
+  {en:"productive",pt:"produtivo/a",ph:"/prəˈdʌktɪv/",type:"adj",cat:"Work",ex:"Have a <strong>productive</strong> day!",expt:"Tenha um dia <strong>produtivo</strong>!"},
+  {en:"collaborate",pt:"colaborar",ph:"/kəˈlæbəreɪt/",type:"verb",cat:"Work",ex:"We need to <strong>collaborate</strong> on this.",expt:"Precisamos <strong>colaborar</strong> nisto."},
+  {en:"negotiate",pt:"negociar",ph:"/nɪˈɡoʊʃieɪt/",type:"verb",cat:"Work",ex:"Let's <strong>negotiate</strong> the terms.",expt:"Vamos <strong>negociar</strong> os termos."},
+
+  // Adjectives
+  {en:"outstanding",pt:"excepcional",ph:"/ˌaʊtˈstændɪŋ/",type:"adj",cat:"Adjectives",ex:"Your work is <strong>outstanding</strong>.",expt:"Seu trabalho é <strong>excepcional</strong>."},
+  {en:"tremendous",pt:"tremendo/a",ph:"/trɪˈmendəs/",type:"adj",cat:"Adjectives",ex:"He made <strong>tremendous</strong> progress.",expt:"Ele fez um progresso <strong>tremendo</strong>."},
+  {en:"remarkable",pt:"notável",ph:"/rɪˈmɑːrkəbəl/",type:"adj",cat:"Adjectives",ex:"She has a <strong>remarkable</strong> talent.",expt:"Ela tem um talento <strong>notável</strong>."},
+  {en:"efficient",pt:"eficiente",ph:"/ɪˈfɪʃənt/",type:"adj",cat:"Adjectives",ex:"Find a more <strong>efficient</strong> solution.",expt:"Encontre uma solução mais <strong>eficiente</strong>."},
+  {en:"flexible",pt:"flexível",ph:"/ˈfleksɪbəl/",type:"adj",cat:"Adjectives",ex:"Stay <strong>flexible</strong> in your approach.",expt:"Seja <strong>flexível</strong> na sua abordagem."},
+  {en:"reliable",pt:"confiável",ph:"/rɪˈlaɪəbəl/",type:"adj",cat:"Adjectives",ex:"She is a very <strong>reliable</strong> person.",expt:"Ela é uma pessoa muito <strong>confiável</strong>."},
+  {en:"significant",pt:"significativo/a",ph:"/sɪɡˈnɪfɪkənt/",type:"adj",cat:"Adjectives",ex:"This is a <strong>significant</strong> change.",expt:"Esta é uma mudança <strong>significativa</strong>."},
+  {en:"consistent",pt:"consistente",ph:"/kənˈsɪstənt/",type:"adj",cat:"Adjectives",ex:"Be <strong>consistent</strong> in your efforts.",expt:"Seja <strong>consistente</strong> nos seus esforços."},
+
+  // Phrasal / Expressions
+  {en:"give up",pt:"desistir",ph:"/ɡɪv ʌp/",type:"phrasal",cat:"Expressions",ex:"Never <strong>give up</strong> on your goals.",expt:"Nunca <strong>desista</strong> dos seus objetivos."},
+  {en:"look forward to",pt:"ansiar por",ph:"/lʊk ˈfɔːrwərd tuː/",type:"phrasal",cat:"Expressions",ex:"I <strong>look forward to</strong> hearing from you.",expt:"<strong>Anseio por</strong> ter notícias suas."},
+  {en:"keep in mind",pt:"ter em mente",ph:"/kiːp ɪn maɪnd/",type:"phrasal",cat:"Expressions",ex:"<strong>Keep in mind</strong> that time is limited.",expt:"<strong>Tenha em mente</strong> que o tempo é limitado."},
+  {en:"take advantage",pt:"aproveitar",ph:"/teɪk ədˈvɑːntɪdʒ/",type:"phrasal",cat:"Expressions",ex:"<strong>Take advantage</strong> of every opportunity.",expt:"<strong>Aproveite</strong> cada oportunidade."},
+  {en:"make sense",pt:"fazer sentido",ph:"/meɪk sens/",type:"phrasal",cat:"Expressions",ex:"Does that <strong>make sense</strong> to you?",expt:"Isso <strong>faz sentido</strong> para você?"},
+  {en:"on the other hand",pt:"por outro lado",ph:"/ɒn ðə ˈʌðər hænd/",type:"phrasal",cat:"Expressions",ex:"<strong>On the other hand</strong>, there are benefits.",expt:"<strong>Por outro lado</strong>, há benefícios."},
+
+  // Numbers / Time
+  {en:"immediately",pt:"imediatamente",ph:"/ɪˈmiːdiətli/",type:"adv",cat:"Time",ex:"Please respond <strong>immediately</strong>.",expt:"Por favor, responda <strong>imediatamente</strong>."},
+  {en:"recently",pt:"recentemente",ph:"/ˈriːsntli/",type:"adv",cat:"Time",ex:"I <strong>recently</strong> moved to a new city.",expt:"<strong>Recentemente</strong> me mudei para uma nova cidade."},
+  {en:"eventually",pt:"eventualmente",ph:"/ɪˈventʃuəli/",type:"adv",cat:"Time",ex:"He will <strong>eventually</strong> succeed.",expt:"Ele vai <strong>eventualmente</strong> ter sucesso."},
+  {en:"meanwhile",pt:"enquanto isso",ph:"/ˈmiːnwaɪl/",type:"adv",cat:"Time",ex:"<strong>Meanwhile</strong>, dinner is ready.",expt:"<strong>Enquanto isso</strong>, o jantar está pronto."},
+  {en:"frequently",pt:"frequentemente",ph:"/ˈfriːkwəntli/",type:"adv",cat:"Time",ex:"She <strong>frequently</strong> goes to the gym.",expt:"Ela vai à academia <strong>frequentemente</strong>."},
+
+];
+
+// ============================================================
+// CATEGORY TRANSLATION MAP (EN -> PT for card back)
+// ============================================================
+const CAT_PT = {
+  "Daily Life":   "Cotidiano",
+  "Verbs":        "Verbos",
+  "Nouns":        "Substantivos",
+  "Travel":       "Viagem",
+  "Technology":   "Tecnologia",
+  "Emotions":     "Emo\u00e7\u00f5es",
+  "Work":         "Trabalho",
+  "Adjectives":   "Adjetivos",
+  "Expressions":  "Express\u00f5es",
+  "Time":         "Tempo"
+};
+
+let state = loadState();
+let session = { words: [], current: 0, seen: new Set() };
+let quiz = { words: [], current: 0, correct: 0, total: 0, done: false };
+let timerInterval = null;
+let countdownInterval = null;
+
+// ============================================================
+// TEXT-TO-SPEECH
+// ============================================================
+function speakWord(word, btnId) {
+  if (!('speechSynthesis' in window)) {
+    alert('Seu navegador não suporta síntese de voz.');
+    return;
+  }
+
+  window.speechSynthesis.cancel(); // stop any current speech
+
+  const btn = document.getElementById(btnId);
+  if (btn) btn.classList.add('speaking');
+
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'en-US';
+  utter.rate = 1.0;   // velocidade normal (1x)
+  utter.pitch = 1;
+
+  // Try to pick an English voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const enVoice = voices.find(v => v.lang.startsWith('en'));
+  if (enVoice) utter.voice = enVoice;
+
+  utter.onend = () => { if (btn) btn.classList.remove('speaking'); };
+  utter.onerror = () => { if (btn) btn.classList.remove('speaking'); };
+
+  window.speechSynthesis.speak(utter);
+}
+
+// Strip HTML tags and speak the plain text sentence
+function speakSentence(htmlText, btnId) {
+  const plain = htmlText.replace(/<[^>]*>/g, ''); // remove <strong> etc
+  speakWord(plain, btnId);
+}
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem('wordflow_state') || '{}');
+    return {
+      wordsLearned: s.wordsLearned || [],
+      quizCorrect:  s.quizCorrect  || 0,
+      quizTotal:    s.quizTotal    || 0,
+      sessions:     s.sessions     || 0,
+      studyDays:    s.studyDays    || [],
+      wordResults:  s.wordResults  || {},
+      nextSession:  s.nextSession  || null,
+    };
+  } catch { return { wordsLearned:[], quizCorrect:0, quizTotal:0, sessions:0, studyDays:[], wordResults:{}, nextSession:null }; }
+}
+
+function saveState() {
+  localStorage.setItem('wordflow_state', JSON.stringify(state));
+}
+
+// ============================================================
+// SESSION INIT
+// ============================================================
+function pickSessionWords() {
+  const today = new Date().toDateString();
+  const key = 'wf_session_' + today;
+  const cached = localStorage.getItem(key);
+  if (cached) return JSON.parse(cached);
+
+  // Prefer unseen words
+  const seen = state.wordsLearned;
+  const unseen = WORDS.filter(w => !seen.includes(w.en));
+  const pool = unseen.length >= 20 ? unseen : [...unseen, ...WORDS.filter(w => seen.includes(w.en))];
+  const shuffled = pool.sort(() => Math.random() - 0.5).slice(0, 20);
+  localStorage.setItem(key, JSON.stringify(shuffled));
+  return shuffled;
+}
+
+function initSession() {
+  session.words = pickSessionWords();
+  session.current = 0;
+  session.seen = new Set();
+  renderFlashcard();
+  updateProgress();
+}
+
+// ============================================================
+// FLASHCARD RENDER
+// ============================================================
+function renderFlashcard() {
+  const area = document.getElementById('flashcardArea');
+
+  if (session.current >= session.words.length) {
+    // Session complete!
+    area.innerHTML = `
+      <div class="session-complete">
+        <div class="complete-icon">🎉</div>
+        <div class="complete-title">Sessão completa!</div>
+        <div class="complete-sub">Você revisou todas as 20 palavras desta sessão.<br>Agora teste seus conhecimentos no Quiz!</div>
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+          <button class="btn-primary" onclick="switchTab('quiz')">🎯 Fazer Quiz</button>
+          <button class="btn-primary" style="background:linear-gradient(135deg,#0f766e,#0284c7)" onclick="startNewFlashcardSession()">🔄 Nova Sessão</button>
+        </div>
+      </div>`;
+    completeSession();
+    return;
+  }
+
+  // Merge cached word with live WORDS array to pick up any new fields (e.g. expt)
+  const cached = session.words[session.current];
+  const w = Object.assign({}, cached, WORDS.find(x => x.en === cached.en) || {});
+  const dots = session.words.map((_, i) => {
+    let cls = 'word-dot';
+    if (i < session.current) cls += ' seen';
+    if (i === session.current) cls += ' current';
+    return `<div class="${cls}" onclick="jumpTo(${i})"></div>`;
+  }).join('');
+
+  area.innerHTML = `
+    <div class="flashcard-container">
+      <div class="flashcard" id="flashcard" onclick="flipCard()">
+        <div class="card-face card-front">
+          <div class="card-category">${w.cat}</div>
+          <div class="card-word-row">
+            <div class="card-word">${w.en}</div>
+            <button class="btn-speak" id="btnSpeakCard" onclick="event.stopPropagation();speakWord('${w.en}','btnSpeakCard')" title="Ouvir pronúncia">🔊</button>
+          </div>
+          ${w.pron ? `<div class="card-pron">${w.pron}</div>` : ''}
+          <div class="card-type">${w.type}</div>
+          <div class="card-hint">👆 Clique para ver a tradução</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-category">${CAT_PT[w.cat] || w.cat}</div>
+          <div class="card-translation">${w.pt}</div>
+          <div class="card-example-row">
+            <div class="card-example">${w.ex}</div>
+            <button class="btn-speak-sm" id="btnSpeakEx" onclick="event.stopPropagation();speakSentence('${w.ex}','btnSpeakEx')" title="Ouvir frase">🔊</button>
+          </div>
+          ${w.expt ? `<div class="card-example-pt">${w.expt}</div>` : ''}
+          <div class="card-hint">💡 Exemplo de uso</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="word-dots">${dots}</div>
+
+    <div class="card-controls">
+      <button class="btn-nav" id="btnPrev" onclick="prevCard(event)" ${session.current===0?'disabled':''}>←</button>
+      <button class="btn-flip" onclick="flipCard()">🔄 Virar</button>
+      <button class="btn-nav" id="btnNext" onclick="nextCard(event)">→</button>
+    </div>`;
+}
+
+function flipCard() {
+  document.getElementById('flashcard')?.classList.toggle('flipped');
+}
+
+function nextCard(e) {
+  e?.stopPropagation();
+  if (session.current < session.words.length) {
+    session.seen.add(session.current);
+    if (!state.wordsLearned.includes(session.words[session.current].en)) {
+      state.wordsLearned.push(session.words[session.current].en);
+      saveState();
+    }
+    session.current++;
+    updateProgress();
+    renderFlashcard();
+  }
+}
+
+function prevCard(e) {
+  e?.stopPropagation();
+  if (session.current > 0) {
+    session.current--;
+    renderFlashcard();
+  }
+}
+
+function jumpTo(i) {
+  session.current = i;
+  renderFlashcard();
+}
+
+function startNewFlashcardSession() {
+  localStorage.removeItem('wf_session_' + new Date().toDateString());
+  initSession();
+}
+
+function completeSession() {
+  state.sessions++;
+  const today = new Date().toISOString().split('T')[0];
+  if (!state.studyDays.includes(today)) state.studyDays.push(today);
+  saveState();
+  updateStats();
+  scheduleNextSession();
+}
+
+function updateProgress() {
+  const pct = Math.round((session.current / session.words.length) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressCount').textContent = `${session.current} / ${session.words.length} palavras`;
+  updateStats();
+}
+
+// ============================================================
+// QUIZ
+// ============================================================
+function initQuiz() {
+  quiz.words = [...session.words].sort(() => Math.random() - 0.5);
+  quiz.current = 0;
+  quiz.correct = 0;
+  quiz.total = 0;
+  quiz.done = false;
+  renderQuiz();
+}
+
+function renderQuiz() {
+  const area = document.getElementById('quizArea');
+
+  if (quiz.words.length === 0) {
+    area.innerHTML = `
+      <div class="session-complete">
+        <div class="complete-icon">📚</div>
+        <div class="complete-title">Estude os flashcards primeiro!</div>
+        <div class="complete-sub">Revise as palavras da sessão atual e depois volte para o quiz.</div>
+        <button class="btn-primary" onclick="switchTab('flash')">⚡ Ir para Flashcards</button>
+      </div>`;
+    return;
+  }
+
+  if (quiz.current >= quiz.words.length) {
+    const pct = Math.round((quiz.correct / quiz.total) * 100);
+    const emoji = pct >= 80 ? '🏆' : pct >= 60 ? '😊' : '💪';
+    area.innerHTML = `
+      <div class="session-complete">
+        <div class="complete-icon">${emoji}</div>
+        <div class="complete-title">${pct}% de acertos!</div>
+        <div class="complete-sub">${quiz.correct} de ${quiz.total} questões corretas.<br>${pct>=80?'Incrível! Continue assim!':pct>=60?'Bom trabalho! Pratique mais!':'Não desista! A repetição é a chave.'}</div>
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+          <button class="btn-primary" onclick="initQuiz()">🔄 Refazer Quiz</button>
+          <button class="btn-primary" style="background:linear-gradient(135deg,#0f766e,#0284c7)" onclick="switchTab('progress')">📊 Ver Progresso</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const w = quiz.words[quiz.current];
+  // Generate 3 wrong answers
+  const wrong = WORDS.filter(x => x.en !== w.en).sort(() => Math.random() - 0.5).slice(0,3).map(x=>x.pt);
+  const opts = [w.pt, ...wrong].sort(() => Math.random() - 0.5);
+
+  const wFull = Object.assign({}, w, WORDS.find(x => x.en === w.en) || {});
+  area.innerHTML = `
+    <div class="quiz-card">
+      <div class="quiz-number">QUESTÃO ${quiz.current+1} DE ${quiz.words.length}</div>
+      <div class="quiz-question-row">
+        <div class="quiz-question">${wFull.en}</div>
+        <button class="btn-speak" id="btnSpeakQuiz" onclick="speakWord('${wFull.en}','btnSpeakQuiz')" title="Ouvir pronúncia">🔊</button>
+      </div>
+      ${wFull.pron ? `<div class="card-pron" style="text-align:center;margin-bottom:16px">${wFull.pron}</div>` : ''}
+      <div class="quiz-options">
+        ${opts.map((opt,i) => `<button class="quiz-option" id="qopt${i}" onclick="answerQuiz('${opt}','${w.pt}',${i})">${opt}</button>`).join('')}
+      </div>
+      <div class="quiz-feedback" id="quizFeedback"></div>
+      <button class="btn-next-quiz" id="btnNextQuiz" onclick="nextQuiz()">Próxima →</button>
+    </div>
+    <div style="text-align:center;color:var(--text-muted);font-size:13px">
+      ✅ ${quiz.correct} corretas &nbsp;|&nbsp; ${quiz.current} respondidas
+    </div>`;
+}
+
+function answerQuiz(chosen, correct, idx) {
+  const btns = document.querySelectorAll('.quiz-option');
+  btns.forEach(b => b.disabled = true);
+
+  const isCorrect = chosen === correct;
+  quiz.total++;
+
+  btns[idx].classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) {
+    btns.forEach((b,i) => { if(b.textContent === correct) b.classList.add('correct'); });
+  }
+
+  if (isCorrect) {
+    quiz.correct++;
+    state.quizCorrect++;
+    state.wordResults[quiz.words[quiz.current].en] = 'correct';
+  } else {
+    state.wordResults[quiz.words[quiz.current].en] = 'wrong';
+  }
+  state.quizTotal++;
+  saveState();
+  updateStats();
+
+  const fb = document.getElementById('quizFeedback');
+  fb.className = 'quiz-feedback show ' + (isCorrect ? 'ok' : 'err');
+  fb.textContent = isCorrect ? '✅ Correto! Excelente!' : `❌ Era: "${correct}"`;
+
+  document.getElementById('btnNextQuiz').classList.add('show');
+}
+
+function nextQuiz() {
+  quiz.current++;
+  renderQuiz();
+}
+
+// ============================================================
+// PROGRESS VIEW
+// ============================================================
+function renderProgress() {
+  const acc = state.quizTotal > 0 ? Math.round((state.quizCorrect/state.quizTotal)*100)+'%' : '—';
+  document.getElementById('ps1').textContent = state.wordsLearned.length;
+  document.getElementById('ps2').textContent = state.quizCorrect;
+  document.getElementById('ps3').textContent = acc;
+  document.getElementById('ps4').textContent = state.studyDays.length;
+
+  // Streak bar (last 7 days)
+  const bar = document.getElementById('streakBar');
+  const days = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  bar.innerHTML = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().split('T')[0];
+    const dn = days[d.getDay()];
+    const done = state.studyDays.includes(iso);
+    const isToday = i === 0;
+    bar.innerHTML += `<div class="streak-day ${done?'done':''} ${isToday?'today':''}">${dn}</div>`;
+  }
+
+  // Word history
+  const hist = document.getElementById('wordHistory');
+  if (state.wordsLearned.length === 0) {
+    hist.innerHTML = '<div style="color:var(--text-muted);font-size:14px;grid-column:1/-1;">Nenhuma palavra estudada ainda. Comece pelos Flashcards!</div>';
+    return;
+  }
+  hist.innerHTML = state.wordsLearned.map(en => {
+    const w = WORDS.find(x=>x.en===en);
+    if (!w) return '';
+    const res = state.wordResults[en];
+    let badge = `<span class="badge badge-gray">—</span>`;
+    if (res==='correct') badge = `<span class="badge badge-green">✓</span>`;
+    if (res==='wrong')   badge = `<span class="badge badge-red">✗</span>`;
+    return `<div class="word-item">
+      <div><div class="en">${w.en}</div><div class="pt">${w.pt}</div></div>
+      ${badge}
+    </div>`;
+  }).join('');
+}
+
+function resetProgress() {
+  if (!confirm('Tem certeza que deseja resetar todo o progresso?')) return;
+  localStorage.removeItem('wordflow_state');
+  localStorage.removeItem('wf_session_' + new Date().toDateString());
+  state = { wordsLearned:[], quizCorrect:0, quizTotal:0, sessions:0, studyDays:[], wordResults:{}, nextSession:null };
+  quiz.words = [];
+  initSession();
+  updateStats();
+  renderProgress();
+}
+
+// ============================================================
+// STATS UPDATE
+// ============================================================
+function updateStats() {
+  document.getElementById('statWords').textContent = state.wordsLearned.length;
+  const acc = state.quizTotal > 0 ? Math.round((state.quizCorrect/state.quizTotal)*100)+'%' : '—';
+  document.getElementById('statAccuracy').textContent = acc;
+  document.getElementById('statSessions').textContent = state.sessions;
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  ['flash','quiz','progress'].forEach(t => {
+    document.getElementById('view'+capitalize(t)).classList.toggle('active', t===tab);
+    document.getElementById('tab'+capitalize(t)).classList.toggle('active', t===tab);
+  });
+  if (tab === 'quiz') { initQuiz(); }
+  if (tab === 'progress') { renderProgress(); }
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+
+// ============================================================
+// NOTIFICATIONS & TIMER
+// ============================================================
+function requestNotifPermission() {
+  if (!('Notification' in window)) {
+    alert('Seu navegador não suporta notificações.');
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    if (perm === 'granted') {
+      document.getElementById('notifBanner').classList.add('hidden');
+      scheduleNextSession();
+      showNotif('🎉 Notificações ativadas!', 'Você será avisado a cada 2 horas para estudar novas palavras.');
+    }
+  });
+}
+
+function showNotif(title, body) {
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '⚡' });
+  }
+}
+
+function scheduleNextSession() {
+  const next = Date.now() + 2 * 60 * 60 * 1000; // 2 hours
+  state.nextSession = next;
+  saveState();
+  startCountdown(next);
+
+  // Set a timeout for notification
+  clearTimeout(window._notifTimeout);
+  window._notifTimeout = setTimeout(() => {
+    showNotif('⚡ Hora de aprender!', 'Sua nova sessão de 20 palavras está pronta no WordFlow!');
+    localStorage.removeItem('wf_session_' + new Date().toDateString());
+    scheduleNextSession();
+  }, 2 * 60 * 60 * 1000);
+}
+
+function startCountdown(targetTime) {
+  clearInterval(countdownInterval);
+  function tick() {
+    const diff = targetTime - Date.now();
+    if (diff <= 0) {
+      document.getElementById('timerDisplay').textContent = '00:00:00';
+      clearInterval(countdownInterval);
+      return;
+    }
+    const h = Math.floor(diff/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    document.getElementById('timerDisplay').textContent =
+      String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+  tick();
+  countdownInterval = setInterval(tick, 1000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  // Check notification permission
+  if ('Notification' in window && Notification.permission === 'granted') {
+    document.getElementById('notifBanner').classList.add('hidden');
+  }
+
+  // Restore timer
+  if (state.nextSession && state.nextSession > Date.now()) {
+    startCountdown(state.nextSession);
+  } else {
+    scheduleNextSession();
+  }
+
+  initSession();
+  updateStats();
+}
+
+init();
+</script>
+</body>
+</html>
