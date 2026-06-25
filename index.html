@@ -844,6 +844,14 @@
       font-size: 11px;
       color: var(--text-muted);
       transition: all 0.3s ease;
+      cursor: pointer;
+      font-family: inherit;
+      user-select: none;
+    }
+
+    .streak-day:hover {
+      border-color: var(--purple);
+      color: var(--purple-l);
     }
 
     .streak-day.done {
@@ -857,6 +865,63 @@
       border-color: var(--cyan);
       color: var(--cyan);
       box-shadow: 0 0 10px rgba(6,182,212,0.2);
+    }
+
+    .streak-day.done.today {
+      background: linear-gradient(135deg, rgba(6,182,212,0.25), rgba(124,58,237,0.25));
+      border-color: var(--cyan);
+      color: var(--cyan);
+      font-weight: 700;
+    }
+
+    /* Day detail panel */
+    .day-detail {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .day-detail-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .day-detail-empty {
+      color: var(--text-muted);
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    .day-words-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .day-word-chip {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.3);
+      color: var(--purple-l);
+    }
+
+    .day-quiz-line {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.06);
     }
 
     /* ===== SCROLL ===== */
@@ -969,6 +1034,8 @@
     <div class="streak-bar" id="streakBar">
       <!-- Populated by JS -->
     </div>
+    <!-- Detail panel shown when a day is clicked -->
+    <div class="day-detail" id="dayDetail" style="display:none"></div>
 
     <div class="section-title">📖 Palavras estudadas</div>
     <div class="word-history" id="wordHistory">
@@ -1275,8 +1342,9 @@ function loadState() {
       studyDays:    s.studyDays    || [],
       wordResults:  s.wordResults  || {},
       nextSession:  s.nextSession  || null,
+      dailyLog:     s.dailyLog     || {},   // { "YYYY-MM-DD": { words:[], quizC:0, quizT:0 } }
     };
-  } catch { return { wordsLearned:[], quizCorrect:0, quizTotal:0, sessions:0, studyDays:[], wordResults:{}, nextSession:null }; }
+  } catch { return { wordsLearned:[], quizCorrect:0, quizTotal:0, sessions:0, studyDays:[], wordResults:{}, nextSession:null, dailyLog:{} }; }
 }
 
 function saveState() {
@@ -1412,10 +1480,67 @@ function startNewFlashcardSession() {
   initSession();
 }
 
+function toggleStudyDay(iso) {
+  const idx = state.studyDays.indexOf(iso);
+  if (idx === -1) {
+    state.studyDays.push(iso);
+  } else {
+    state.studyDays.splice(idx, 1);
+  }
+  saveState();
+  updateStats();
+  showDayDetail(iso); // show detail panel for this day
+}
+
+function showDayDetail(iso) {
+  const panel = document.getElementById('dayDetail');
+  if (!panel) return;
+
+  const log = state.dailyLog[iso];
+  const date = new Date(iso + 'T12:00:00');
+  const dayNames = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  const dayName = dayNames[date.getDay()];
+  const dateStr = date.toLocaleDateString('pt-BR', { day:'2-digit', month:'long' });
+
+  if (!log || (log.words.length === 0 && log.quizT === 0)) {
+    panel.style.display = 'block';
+    panel.innerHTML = `
+      <div class="day-detail-title">📅 ${dayName} — ${dateStr}</div>
+      <div class="day-detail-empty">Nenhuma atividade registrada neste dia.</div>`;
+    return;
+  }
+
+  const wordsHtml = log.words.length > 0
+    ? `<div class="day-words-grid">${log.words.map(en => {
+        const wObj = WORDS.find(x => x.en === en);
+        return `<span class="day-word-chip" title="${wObj ? wObj.pt : ''}">${en}</span>`;
+      }).join('')}</div>`
+    : '';
+
+  const quizHtml = log.quizT > 0
+    ? `<div class="day-quiz-line">🎯 Quiz: <strong>${log.quizC}/${log.quizT}</strong> corretas — ${Math.round(log.quizC/log.quizT*100)}% de acerto</div>`
+    : '';
+
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div class="day-detail-title">📅 ${dayName} — ${dateStr}</div>
+    ${log.words.length > 0 ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">📖 ${log.words.length} palavra${log.words.length>1?'s':''} estudada${log.words.length>1?'s':''}</div>` : ''}
+    ${wordsHtml}
+    ${quizHtml}`;
+}
+
 function completeSession() {
   state.sessions++;
   const today = new Date().toISOString().split('T')[0];
   if (!state.studyDays.includes(today)) state.studyDays.push(today);
+
+  // Log words studied today
+  if (!state.dailyLog[today]) state.dailyLog[today] = { words: [], quizC: 0, quizT: 0 };
+  session.words.forEach(w => {
+    if (!state.dailyLog[today].words.includes(w.en))
+      state.dailyLog[today].words.push(w.en);
+  });
+
   saveState();
   updateStats();
   scheduleNextSession();
@@ -1515,6 +1640,13 @@ function answerQuiz(chosen, correct, idx) {
     state.wordResults[quiz.words[quiz.current].en] = 'wrong';
   }
   state.quizTotal++;
+
+  // Record quiz result in daily log
+  const todayQ = new Date().toISOString().split('T')[0];
+  if (!state.dailyLog[todayQ]) state.dailyLog[todayQ] = { words: [], quizC: 0, quizT: 0 };
+  if (isCorrect) state.dailyLog[todayQ].quizC++;
+  state.dailyLog[todayQ].quizT++;
+
   saveState();
   updateStats();
 
@@ -1540,7 +1672,7 @@ function renderProgress() {
   document.getElementById('ps3').textContent = acc;
   document.getElementById('ps4').textContent = state.studyDays.length;
 
-  // Streak bar (last 7 days)
+  // Streak bar (last 7 days) — clickable buttons
   const bar = document.getElementById('streakBar');
   const days = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
   bar.innerHTML = '';
@@ -1551,7 +1683,8 @@ function renderProgress() {
     const dn = days[d.getDay()];
     const done = state.studyDays.includes(iso);
     const isToday = i === 0;
-    bar.innerHTML += `<div class="streak-day ${done?'done':''} ${isToday?'today':''}">${dn}</div>`;
+    const cls = `streak-day ${done ? 'done' : ''} ${isToday ? 'today' : ''}`;
+    bar.innerHTML += `<button class="${cls}" onclick="toggleStudyDay('${iso}')" title="${iso}">${dn}${done ? ' ✓' : ''}</button>`;
   }
 
   // Word history
